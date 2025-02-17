@@ -7,24 +7,34 @@ import java.util.Map;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import com.auth.services.TokenStore;
+
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import lombok.RequiredArgsConstructor;
 
 @Component
+@RequiredArgsConstructor
 public class JwtUtil {
 	@Value("${app.jwt-secret}")
 	private String jwtSecret;
 	@Value("${app.jwt-expiration-milliseconds}")
 	private Long jwtExpirationTime;
 	
+	
+	private final TokenStore tokenStore;
+	
 	public String generateToken(String username, String role) {
 		Map<String, String> claims = new HashMap<>();
-		claims.put("role", role);
+		claims.put("role", "ROLE_" + role);
 		
-		return doGenerateToken(claims, username);
+		String newToken = doGenerateToken(claims, username);
+	    tokenStore.storeToken(username, newToken); // Store new token, invalidating the old one
+
+	    return newToken;
 	}
 
 	public String doGenerateToken(Map<String, String> claims, String subject) {
@@ -38,8 +48,12 @@ public class JwtUtil {
 	}
 	
 	public Claims extractAllClaim(String token) {
-		return Jwts.parserBuilder().setSigningKey(Keys.hmacShaKeyFor(Decoders.BASE64.decode(jwtSecret)))
-				.build().parseClaimsJws(token).getBody();
+		return Jwts.parserBuilder()
+				.setSigningKey(Keys.hmacShaKeyFor(Decoders.BASE64.decode(jwtSecret)))
+				.setAllowedClockSkewSeconds(2)
+				.build()
+				.parseClaimsJws(token)
+				.getBody();
 	}
 	
 	public String extractUsername(String token) {

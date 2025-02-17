@@ -1,5 +1,9 @@
 package com.auth.security;
 
+import java.util.List;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -13,6 +17,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
 
 import com.auth.filter.JwtFilter;
 import com.auth.services.CustomUserDetailsService;
@@ -28,6 +33,9 @@ public class SecurityConfig {
 	private final CustomUserDetailsService userDetailsService;
 	private final JwtFilter jwtFilter;
 	
+    private Logger logger = LoggerFactory.getLogger(SecurityConfig.class);
+
+	
 	@Bean
 	PasswordEncoder passwordEncoder() {
 		return new BCryptPasswordEncoder();
@@ -35,15 +43,27 @@ public class SecurityConfig {
 	
 	@Bean
 	SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+		logger.info("In security Config file, filter chain");
+		
 		http.csrf(c -> c.disable())
+			.cors(cors -> cors.configurationSource(request -> {
+	            CorsConfiguration config = new CorsConfiguration();
+	            config.setAllowedOrigins(List.of("http://localhost:3000")); // React frontend URL
+	            config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+	            config.setAllowedHeaders(List.of("*"));
+	            config.setAllowCredentials(true); // Important for cookies/sessions
+	            return config;
+	        }))
 			.authorizeHttpRequests(
 				request -> request.requestMatchers(
 						"/auth/login",
 						"/auth/createUser",
-						"/auth/createOtp/*",
-						"/auth/validateUser"
+						"/auth/validateUser",
+						"/auth/createOtp/*"
 						)
 				.permitAll()
+				.requestMatchers("/users/**").hasAuthority("ROLE_USER")
+	            .requestMatchers("/auth/**").hasAuthority("ROLE_ADMIN")
 				.anyRequest().authenticated()
 			)
 			.authenticationProvider(authenticationProvider());
