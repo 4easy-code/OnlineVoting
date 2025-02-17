@@ -6,6 +6,9 @@ import java.util.Optional;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
@@ -36,17 +39,34 @@ public class UserService {
 	
 	
 	public UserDto getUserDetails(String usernameOrEmail) throws UserNotFoundException {
-		
-		logger.info("Trying to get User details");
-		
-		Optional<User> user = userRepository.findByUsernameOrEmail(usernameOrEmail, usernameOrEmail);
-		if(user.isEmpty()) {
-			throw new UserNotFoundException(usernameOrEmail + " not present!");
-		}
-		logger.info("User details fetched successfully");
-		
-		return modelMapper.map(user.get(), UserDto.class);
+	    logger.info("Trying to get User details");
+
+	    // Get the authenticated user's details
+	    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+	    
+	    if (authentication == null || !authentication.isAuthenticated()) {
+	        throw new AccessDeniedException("Unauthorized request");
+	    }
+
+	    String authenticatedUsername = authentication.getName();
+	    boolean isAdmin = authentication.getAuthorities().stream()
+	        .anyMatch(grantedAuthority -> grantedAuthority.getAuthority().equals("ROLE_ADMIN"));
+
+	    // If the user is NOT an admin, they should only fetch their own details
+	    if (!isAdmin && !authenticatedUsername.equals(usernameOrEmail)) {
+	        throw new AccessDeniedException("Access denied. You can only view your own details.");
+	    }
+
+	    Optional<User> user = userRepository.findByUsernameOrEmail(usernameOrEmail, usernameOrEmail);
+	    if (user.isEmpty()) {
+	        throw new UserNotFoundException(usernameOrEmail + " not present!");
+	    }
+
+	    logger.info("User details fetched successfully");
+
+	    return modelMapper.map(user.get(), UserDto.class);
 	}
+
 	
 	public Boolean changePassword(ChangePasswordDto passwordDto) throws UserNotFoundException, OtpGenerationFailedException, InvalidOtpException {
 		List<Optional<Otp>> otpListOptional = otpRepository.findByUsernameoremail(passwordDto.getUsernameOrEmail());
