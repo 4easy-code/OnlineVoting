@@ -41,6 +41,7 @@ public class LoginService {
 	private final PasswordEncoder passwordEncoder;
 	private final AuthenticationManager authenticationManager;
 	private final JwtUtil jwtUtil;
+	private final TokenStore tokenStore;
 	
 	private final ModelMapper modelMapper;
 	
@@ -87,6 +88,9 @@ public class LoginService {
 			String role = user.getRole();
 			String username = user.getUsername();
 			String token = jwtUtil.generateToken(username, role);
+			
+			tokenStore.storeToken(username, token);
+			
 			return new JwtResponse(token, username, role);
 		} else {
 			throw new InvalidCredentialsException("Invalid username or password!");
