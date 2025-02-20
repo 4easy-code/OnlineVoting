@@ -15,6 +15,8 @@ import com.auth.services.CustomUserDetailsService;
 import com.auth.services.TokenStore;
 import com.auth.util.JwtUtil;
 
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -42,46 +44,61 @@ public class JwtFilter extends OncePerRequestFilter {
 
 	@Override
 	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
-            throws ServletException, IOException {
-		
-		logger.info("trying to validate token: {}", request.getHeader("Authorization"));
-		
-        String authHeader = request.getHeader("Authorization");
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            filterChain.doFilter(request, response);
-            return;
-        }
+	        throws ServletException, IOException {
 
-        String token = authHeader.substring(7);
-        String username = jwtUtil.extractUsername(token);
+	    logger.info("Trying to validate token: {}", request.getHeader("Authorization"));
 
-        if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-            
-            logger.info("Extracted Role from UserDetails: {}", userDetails.getAuthorities());
+	    String authHeader = request.getHeader("Authorization");
+	    if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+	        filterChain.doFilter(request, response);
+	        return;
+	    }
 
-            if (jwtUtil.validateToken(token, userDetails.getUsername()) && tokenStore.isValidToken(username, token)) {
-                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                        userDetails, null, userDetails.getAuthorities());
-                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(authToken);
-                
-                logger.info("SecurityContext Authentication: {}", SecurityContextHolder.getContext().getAuthentication());
-            } else {
-                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                response.getWriter().write("Session expired or invalid token");
-                return;
-            }
-        }
-        
-        logger.info("Successfully validated the token !");
+	    String token = authHeader.substring(7);
 
-        try {
-        	filterChain.doFilter(request, response);
-        	logger.info("passsed filter chain");
-        } catch (Exception e) {
-			logger.info("Filter chain error");
-		}
-    }
+	    try {
+	        String username = jwtUtil.extractUsername(token);
+
+	        if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+	            UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+
+	            logger.info("Extracted Role from UserDetails: {}", userDetails.getAuthorities());
+
+	            if (jwtUtil.validateToken(token, userDetails.getUsername()) && tokenStore.isValidToken(username, token)) {
+	                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+	                        userDetails, null, userDetails.getAuthorities());
+	                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+	                SecurityContextHolder.getContext().setAuthentication(authToken);
+
+	                logger.info("SecurityContext Authentication: {}", SecurityContextHolder.getContext().getAuthentication());
+	            } else {
+	                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+	                response.getWriter().write("Session expired or invalid token");
+	                return;
+	            }
+	        }
+	    } catch (ExpiredJwtException e) {
+	        logger.error("Token expired: {}", e.getMessage());
+	        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+	        response.getWriter().write("Token has expired. Please log in again.");
+	        return;
+	    } catch (JwtException e) {  // Generic exception for any JWT-related error
+	        logger.error("Invalid token: {}", e.getMessage());
+	        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+	        response.getWriter().write("Invalid token. Please log in again.");
+	        return;
+	    } catch (Exception e) {
+	        logger.error("Token validation error: {}", e.getMessage());
+	        response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+	        response.getWriter().write("An error occurred while processing authentication.");
+	        return;
+	    }
+
+	    logger.info("Successfully validated the token!");
+
+	    filterChain.doFilter(request, response);
+	}
+
+
 	
 }
