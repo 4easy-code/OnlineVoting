@@ -9,9 +9,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import com.auth.filter.JwtFilter;
-import com.auth.services.TokenStore;
-
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -27,17 +24,15 @@ public class JwtUtil {
 	@Value("${app.jwt-expiration-milliseconds}")
 	private Long jwtExpirationTime;
 	
-	
-	private final TokenStore tokenStore;
-	
-	private Logger logger = LoggerFactory.getLogger(JwtFilter.class);
+	private Logger logger = LoggerFactory.getLogger(JwtUtil.class);
 	
 	public String generateToken(String username, String role) {
+		logger.info("generating token ...");
+		
 		Map<String, String> claims = new HashMap<>();
 		claims.put("role", "ROLE_" + role);
 		
 		String newToken = doGenerateToken(claims, username);
-	    tokenStore.storeToken(username, newToken, jwtExpirationTime / 1000); // Store new token, invalidating the old one
 
 	    return newToken;
 	}

@@ -8,6 +8,7 @@ import java.util.Optional;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -44,6 +45,9 @@ public class LoginService {
 	private final TokenStore tokenStore;
 	
 	private final ModelMapper modelMapper;
+	
+	@Value("${app.jwt-expiration-milliseconds}")
+	private Long jwtExpirationTime;
 	
 	
 	private Logger logger = LoggerFactory.getLogger(LoginService.class);
@@ -89,7 +93,7 @@ public class LoginService {
 			String username = user.getUsername();
 			String token = jwtUtil.generateToken(username, role);
 			
-			tokenStore.storeToken(username, token, 120000 / 1000);
+			tokenStore.storeToken(username, token, jwtExpirationTime / 1000);
 			
 			return new JwtResponse(token, username, role);
 		} else {
