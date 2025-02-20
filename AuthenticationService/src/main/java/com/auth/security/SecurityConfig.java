@@ -62,7 +62,7 @@ public class SecurityConfig {
 						"/auth/createOtp/*"
 						)
 				.permitAll()
-				.requestMatchers("/users/**").hasAuthority("ROLE_USER")
+				.requestMatchers("/users/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_USER")
 	            .requestMatchers("/auth/**").hasAuthority("ROLE_ADMIN")
 				.anyRequest().authenticated()
 			)

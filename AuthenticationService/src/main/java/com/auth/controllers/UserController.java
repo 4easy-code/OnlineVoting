@@ -41,7 +41,8 @@ public class UserController {
 	@GetMapping(ApiConstant.GET_USER_DETAILS)
 	public ResponseEntity<ApiResponse<UserDto>> getUserDetails(@PathVariable String usernameOrEmail) throws UserNotFoundException {
 		
-		logger.info("Calling get user details api");
+		logger.info("UserController: Received request for user details of {}", usernameOrEmail);
+		
 		UserDto userDetails = userService.getUserDetails(usernameOrEmail);
 		return ResponseEntity.status(HttpStatus.OK)
 				.body(new ApiResponse<>(userDetails, "Success", "User Details fetched successfully", HttpStatus.OK.value(), LocalDateTime.now()));

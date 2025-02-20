@@ -89,7 +89,7 @@ public class LoginService {
 			String username = user.getUsername();
 			String token = jwtUtil.generateToken(username, role);
 			
-			tokenStore.storeToken(username, token);
+			tokenStore.storeToken(username, token, 120000 / 1000);
 			
 			return new JwtResponse(token, username, role);
 		} else {

@@ -4,9 +4,12 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import com.auth.filter.JwtFilter;
 import com.auth.services.TokenStore;
 
 import io.jsonwebtoken.Claims;
@@ -27,12 +30,14 @@ public class JwtUtil {
 	
 	private final TokenStore tokenStore;
 	
+	private Logger logger = LoggerFactory.getLogger(JwtFilter.class);
+	
 	public String generateToken(String username, String role) {
 		Map<String, String> claims = new HashMap<>();
 		claims.put("role", "ROLE_" + role);
 		
 		String newToken = doGenerateToken(claims, username);
-	    tokenStore.storeToken(username, newToken); // Store new token, invalidating the old one
+	    tokenStore.storeToken(username, newToken, jwtExpirationTime / 1000); // Store new token, invalidating the old one
 
 	    return newToken;
 	}
@@ -61,8 +66,8 @@ public class JwtUtil {
 	}
 	
 	public boolean validateToken(String token, String username) {
-		 final String extractUsername = extractUsername(token);
-		 return (extractUsername.equals(username) && !isTokenExpired(token));
+		final String extractUsername = extractUsername(token);
+		return (extractUsername.equals(username) && !isTokenExpired(token));
 	}
 
 	public boolean isTokenExpired(String token) {
