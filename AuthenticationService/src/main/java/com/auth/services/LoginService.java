@@ -117,7 +117,6 @@ public class LoginService {
 			}
 		}
 		
-		
 		SecureRandom random = new SecureRandom();
 		int otpGenerated = 1000 + random.nextInt(9000); // OTP always 4 digit
 		

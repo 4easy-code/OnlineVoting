@@ -21,6 +21,7 @@ import com.auth.dto.DeleteUserDto;
 import com.auth.dto.UpdateUserDto;
 import com.auth.dto.UserDto;
 import com.auth.exceptions.InvalidOtpException;
+import com.auth.exceptions.InvalidPasswordException;
 import com.auth.exceptions.OtpGenerationFailedException;
 import com.auth.exceptions.UserNotFoundException;
 import com.auth.response.ApiResponse;
@@ -49,7 +50,7 @@ public class UserController {
 	}
 	
 	@PutMapping(ApiConstant.CHANGE_PASSWORD)
-	public ResponseEntity<ApiResponse<Boolean>> changePassword(@RequestBody ChangePasswordDto passwordDto) throws UserNotFoundException, OtpGenerationFailedException, InvalidOtpException {
+	public ResponseEntity<ApiResponse<Boolean>> changePassword(@RequestBody ChangePasswordDto passwordDto) throws UserNotFoundException, OtpGenerationFailedException, InvalidOtpException, InvalidPasswordException {
 		Boolean isPasswordChanged = userService.changePassword(passwordDto);
 		if(!isPasswordChanged) {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST)

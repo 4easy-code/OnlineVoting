@@ -19,6 +19,7 @@ import com.auth.dto.UserDto;
 import com.auth.entities.Otp;
 import com.auth.entities.User;
 import com.auth.exceptions.InvalidOtpException;
+import com.auth.exceptions.InvalidPasswordException;
 import com.auth.exceptions.OtpGenerationFailedException;
 import com.auth.exceptions.UserNotFoundException;
 import com.auth.repos.OtpRepository;
@@ -68,7 +69,7 @@ public class UserService {
 	}
 
 	
-	public Boolean changePassword(ChangePasswordDto passwordDto) throws UserNotFoundException, OtpGenerationFailedException, InvalidOtpException {
+	public Boolean changePassword(ChangePasswordDto passwordDto) throws UserNotFoundException, OtpGenerationFailedException, InvalidOtpException, InvalidPasswordException {
 		List<Optional<Otp>> otpListOptional = otpRepository.findByUsernameoremail(passwordDto.getUsernameOrEmail());
 		if(otpListOptional.isEmpty()) {
 			throw new InvalidOtpException("OTP not present for " + passwordDto.getUsernameOrEmail());
@@ -86,6 +87,11 @@ public class UserService {
 		}
 		
 		User user = userOptional.get();
+		
+		if(user.getPassword().matches(passwordDto.getPassword())) {
+			throw new InvalidPasswordException("new password can't be same as old password");
+		}
+		
 		user.setPassword(passwordEncoder.encode(passwordDto.getPassword()));
 		userRepository.save(user);
 		
