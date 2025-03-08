@@ -67,7 +67,7 @@ public class JwtFilter extends OncePerRequestFilter {
                 logger.info("Is token validated by Tokenstore: {}", (tokenStore.isValidToken(username, token) || tokenStore.isRefreshTokenValid(username, token) ));
 
 	            if (jwtUtil.validateToken(token, userDetails.getUsername())) {
-	            	String tokenType = jwtUtil.extractAllClaim(token).get("tokenType", String.class);
+	            	String tokenType = jwtUtil.extractAllClaims(token).get("tokenType", String.class);
 	            	if ("REFRESH".equals(tokenType)) {
 	                    // Allow refresh token ONLY for the refresh endpoint
 	                    if (!request.getRequestURI().equals("/api/auth/refresh-token")) {

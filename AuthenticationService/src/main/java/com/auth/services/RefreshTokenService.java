@@ -40,7 +40,7 @@ public class RefreshTokenService {
 	            throw new InvalidRefreshTokenException("Invalid or expired Refresh token!");
 	        }
 
-	        role = jwtUtil.extractAllClaim(refreshToken).get("role", String.class).replace("ROLE_", "");
+	        role = jwtUtil.extractAllClaims(refreshToken).get("role", String.class).replace("ROLE_", "");
 	        newAccessToken = jwtUtil.generateToken(username, role, jwtExpirationTime);
 	        
 	        tokenStore.storeToken(username, newAccessToken);
