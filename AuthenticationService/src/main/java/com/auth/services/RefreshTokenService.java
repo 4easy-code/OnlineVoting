@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import com.auth.dto.RefreshTokenRequestDto;
+import com.auth.exceptions.InvalidRefreshTokenException;
 import com.auth.response.JwtResponse;
 import com.auth.util.JwtUtil;
 
@@ -24,7 +25,7 @@ public class RefreshTokenService {
 	private Logger logger = LoggerFactory.getLogger(RefreshTokenService.class);
 	
 	
-	public JwtResponse createAccessToken(RefreshTokenRequestDto token) {
+	public JwtResponse createAccessToken(RefreshTokenRequestDto token) throws InvalidRefreshTokenException {
 	    String refreshToken = token.getRefreshToken();
 	    String username;
 	    String newAccessToken;
@@ -34,15 +35,9 @@ public class RefreshTokenService {
 	        username = jwtUtil.extractUsername(refreshToken);
 
 	        // Validate the token itself
-	        if (!jwtUtil.validateToken(refreshToken, username) || !tokenStore.isRefreshTokenValid(username, refreshToken)) {
+	        if (!tokenStore.isRefreshTokenValid(username, refreshToken)) {
 	            logger.info("Invalid or expired refresh token");
-	            throw new JwtException("Invalid refresh token");
-	        }
-
-	        String tokenType = jwtUtil.extractAllClaim(refreshToken).get("tokenType", String.class);
-	        if (!"REFRESH".equals(tokenType)) {
-	            logger.warn("Attempt to use non-refresh token for refresh operation");
-	            throw new JwtException("Invalid token type for refresh");
+	            throw new InvalidRefreshTokenException("Invalid or expired Refresh token!");
 	        }
 
 	        role = jwtUtil.extractAllClaim(refreshToken).get("role", String.class).replace("ROLE_", "");
@@ -55,7 +50,7 @@ public class RefreshTokenService {
 
 	    } catch (ExpiredJwtException e) {
 	        logger.info("Refresh token expired: {}", e.getMessage());
-	        throw new JwtException("Refresh token expired");
+	        throw new InvalidRefreshTokenException("refresh token expired! Please login again.");
 	    }
 	}
 

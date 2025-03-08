@@ -25,7 +25,8 @@ public class GlobalExceptionHandler {
 	OtpGenerationFailedException.class,
 	UserAlreadyExistsException.class,
 	UserNotFoundException.class,
-	UserNotValidatedException.class
+	UserNotValidatedException.class,
+	InvalidRefreshTokenException.class
 	})
 	public ResponseEntity<ErrorResponse> handleNotFoundException(Exception ex) {
 		logger.error("An error occured: {}", ex.getMessage());
