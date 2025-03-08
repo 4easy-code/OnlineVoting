@@ -63,13 +63,32 @@ public class JwtFilter extends OncePerRequestFilter {
 	            UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
 	            logger.info("Extracted Role from UserDetails: {}", userDetails.getAuthorities());
+                logger.info("Is token validated by JWTUtil: {}", jwtUtil.validateToken(token, userDetails.getUsername()));
+                logger.info("Is token validated by Tokenstore: {}", (tokenStore.isValidToken(username, token) || tokenStore.isRefreshTokenValid(username, token) ));
 
-	            if (jwtUtil.validateToken(token, userDetails.getUsername()) && tokenStore.isValidToken(username, token)) {
-	                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-	                        userDetails, null, userDetails.getAuthorities());
-	                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-	                SecurityContextHolder.getContext().setAuthentication(authToken);
-
+	            if (jwtUtil.validateToken(token, userDetails.getUsername())) {
+	            	String tokenType = jwtUtil.extractAllClaim(token).get("tokenType", String.class);
+	            	if ("REFRESH".equals(tokenType)) {
+	                    // Allow refresh token ONLY for the refresh endpoint
+	                    if (!request.getRequestURI().equals("/api/auth/refresh-token")) {
+	                        logger.warn("Refresh token cannot be used for authentication outside refresh endpoint");
+	                        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+	                        response.getWriter().write("Refresh tokens cannot be used to access protected resources.");
+	                        return;
+	                    }
+	                } else {
+	                	// Validate only access tokens for normal authentication
+	                    if (!tokenStore.isValidToken(username, token)) {
+	                        logger.warn("Access token is invalid or expired");
+	                        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+	                        response.getWriter().write("Session expired or invalid token");
+	                        return;
+	                    }
+	                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+	                    		userDetails, null, userDetails.getAuthorities());
+	                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+	                    SecurityContextHolder.getContext().setAuthentication(authToken);
+	                }
 	                logger.info("SecurityContext Authentication: {}", SecurityContextHolder.getContext().getAuthentication());
 	            } else {
 	                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);

@@ -59,7 +59,8 @@ public class SecurityConfig {
 						"/auth/login",
 						"/auth/createUser",
 						"/auth/validateUser",
-						"/auth/createOtp/*"
+						"/auth/createOtp/*",
+						"/refresh/*"
 						)
 				.permitAll()
 				.requestMatchers("/users/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_USER")

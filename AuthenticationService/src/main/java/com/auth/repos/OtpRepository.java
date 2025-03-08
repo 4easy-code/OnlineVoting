@@ -15,7 +15,7 @@ import com.auth.entities.Otp;
 public interface OtpRepository extends JpaRepository<Otp, Long> {
 	List<Optional<Otp>> findByUsernameoremail(String usernameoremail);
 	
-	// access to only ADMIN, to periodically delete unused otps
+	// access to only ADMIN, to periodically delete unused OTP
 	@Query("DELETE FROM Otp o WHERE o.expiresAt < :currentTime")
 	void deleteExpiredOtps(@Param("currentTime") LocalDateTime currentTime);
 

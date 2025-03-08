@@ -47,7 +47,9 @@ public class LoginService {
 	private final ModelMapper modelMapper;
 	
 	@Value("${app.jwt-expiration-milliseconds}")
-	private Long jwtExpirationTime;
+	private Long jwtAccessTokenExpirationTime;
+	@Value("${app.jwt-refresh-expiration-milliseconds}")
+	private Long jwtRefreshTokenExpirationTime;
 	
 	
 	private Logger logger = LoggerFactory.getLogger(LoginService.class);
@@ -91,11 +93,13 @@ public class LoginService {
 		if(authentication.isAuthenticated()) {
 			String role = user.getRole();
 			String username = user.getUsername();
-			String token = jwtUtil.generateToken(username, role);
+			String accessToken = jwtUtil.generateToken(username, role, jwtAccessTokenExpirationTime);
+			String refreshToken = jwtUtil.generateRefreshToken(username, role, jwtRefreshTokenExpirationTime);
 			
-			tokenStore.storeToken(username, token, jwtExpirationTime / 1000);
+			tokenStore.storeToken(username, accessToken);
+			tokenStore.storeRefreshToken(username, refreshToken);
 			
-			return new JwtResponse(token, username, role);
+			return new JwtResponse(accessToken, refreshToken, username, role);
 		} else {
 			throw new InvalidCredentialsException("Invalid username or password!");
 		}

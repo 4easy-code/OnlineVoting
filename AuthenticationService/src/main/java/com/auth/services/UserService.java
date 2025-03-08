@@ -95,7 +95,7 @@ public class UserService {
 		user.setPassword(passwordEncoder.encode(passwordDto.getPassword()));
 		userRepository.save(user);
 		
-		otpRepository.delete(otp); // delete otp upon use
+		otpRepository.delete(otp); // delete OTP upon use
 		return true;
 	}
 	

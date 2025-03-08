@@ -21,30 +21,45 @@ import lombok.RequiredArgsConstructor;
 public class JwtUtil {
 	@Value("${app.jwt-secret}")
 	private String jwtSecret;
-	@Value("${app.jwt-expiration-milliseconds}")
-	private Long jwtExpirationTime;
 	
 	private Logger logger = LoggerFactory.getLogger(JwtUtil.class);
 	
-	public String generateToken(String username, String role) {
+	public String generateToken(String username, String role, long expirationTime) {
 		logger.info("generating token ...");
 		
 		Map<String, String> claims = new HashMap<>();
 		claims.put("role", "ROLE_" + role);
+		claims.put("tokenType", "ACCESS");
 		
-		String newToken = doGenerateToken(claims, username);
+		String newToken = doGenerateToken(claims, username, expirationTime);
 
 	    return newToken;
 	}
 
-	public String doGenerateToken(Map<String, String> claims, String subject) {
+	public String doGenerateToken(Map<String, String> claims, String subject, long expirationTime) {
 		return Jwts.builder()
 				.setClaims(claims)
 				.setSubject(subject)
 				.setIssuedAt(new Date(System.currentTimeMillis()))
-				.setExpiration(new Date(System.currentTimeMillis() + jwtExpirationTime))
+				.setExpiration(new Date(System.currentTimeMillis() + expirationTime))
 				.signWith(Keys.hmacShaKeyFor(Decoders.BASE64.decode(jwtSecret)), SignatureAlgorithm.HS512)
 				.compact();
+	}
+	
+	public String generateRefreshToken(String username, String role, long expirationTime) {
+		Map<String, String> claims = new HashMap<>();
+		claims.put("role", "ROLE_" + role);
+		claims.put("tokenType", "REFRESH");
+		
+		String newToken = Jwts.builder()
+				.setClaims(claims)
+				.setSubject(username)
+				.setIssuedAt(new Date(System.currentTimeMillis()))
+				.setExpiration(new Date(System.currentTimeMillis() + expirationTime))
+				.signWith(Keys.hmacShaKeyFor(Decoders.BASE64.decode(jwtSecret)), SignatureAlgorithm.HS512)
+				.compact();
+		
+		return newToken;
 	}
 	
 	public Claims extractAllClaim(String token) {
