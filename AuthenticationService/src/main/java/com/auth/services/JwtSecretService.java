@@ -2,10 +2,10 @@ package com.auth.services;
 
 import java.security.SecureRandom;
 import java.util.Base64;
-import java.util.concurrent.ConcurrentHashMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import jakarta.annotation.PostConstruct;
@@ -14,7 +14,7 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 public class JwtSecretService {
-	private ConcurrentHashMap<String, String> jwtSecretsMap = new ConcurrentHashMap<>();
+	private final StringRedisTemplate redisTemplate;
 	
 	private static final String CURRENT_SECRET_KEY = "jwtSecret:current";
     private static final String PREVIOUS_SECRET_KEY = "jwtSecret:previous";
@@ -30,28 +30,30 @@ public class JwtSecretService {
     
     @PostConstruct
     public void initializeSecret() {
-        if (jwtSecretsMap.get(CURRENT_SECRET_KEY) == null) {
+    	if (!Boolean.TRUE.equals(redisTemplate.hasKey(CURRENT_SECRET_KEY))) {
             String newSecret = generateSecretKey();
-            jwtSecretsMap.put(CURRENT_SECRET_KEY, newSecret);
+            redisTemplate.opsForValue().set(CURRENT_SECRET_KEY, newSecret);
             logger.info("Generating Initial Secret Key");
         }
     }
     
     public void rotateSecret() {
-        String currentSecret = jwtSecretsMap.get(CURRENT_SECRET_KEY);
+        String currentSecret = redisTemplate.opsForValue().get(CURRENT_SECRET_KEY);
         String newSecret = generateSecretKey();
 
-        jwtSecretsMap.put(PREVIOUS_SECRET_KEY, currentSecret);        
-        jwtSecretsMap.put(CURRENT_SECRET_KEY, newSecret);
+        if (currentSecret != null) {
+            redisTemplate.opsForValue().set(PREVIOUS_SECRET_KEY, currentSecret);
+        }
+        redisTemplate.opsForValue().set(CURRENT_SECRET_KEY, newSecret);
         
         logger.info("🔑 JWT Secret Rotated!");
     }
     
     public String getCurrentSecret() {
-        return jwtSecretsMap.get(CURRENT_SECRET_KEY);
+    	return redisTemplate.opsForValue().get(CURRENT_SECRET_KEY);
     }
 
     public String getPreviousSecret() {
-        return jwtSecretsMap.get(PREVIOUS_SECRET_KEY);
+    	return redisTemplate.opsForValue().get(PREVIOUS_SECRET_KEY);
     }
 }
