@@ -1,4 +1,4 @@
-package com.auth.security;
+package com.auth.config;
 
 import java.util.List;
 

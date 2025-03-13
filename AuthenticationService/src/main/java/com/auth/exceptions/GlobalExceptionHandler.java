@@ -31,7 +31,8 @@ public class GlobalExceptionHandler {
 	public ResponseEntity<ErrorResponse> handleNotFoundException(Exception ex) {
 		logger.error("An error occured: {}", ex.getMessage());
 		
-		ErrorResponse errorResponse = new ErrorResponse("Failure",
+		ErrorResponse errorResponse = new ErrorResponse(
+				"Failure",
 				ex.getMessage(),
 				HttpStatus.CONFLICT.value(),
 				LocalDateTime.now());
@@ -39,6 +40,17 @@ public class GlobalExceptionHandler {
 		return new ResponseEntity<ErrorResponse>(errorResponse, HttpStatus.CONFLICT);
 		
 	}
+	
+	@ExceptionHandler(RateLimitExceededException.class)
+    public ResponseEntity<ErrorResponse> handleRateLimitExceeded(RateLimitExceededException ex) {
+		ErrorResponse errorResponse = new ErrorResponse(
+				"Rate Limit Exceeded",
+				ex.getMessage(),
+				HttpStatus.TOO_MANY_REQUESTS.value(),
+				LocalDateTime.now());
+		
+		return new ResponseEntity<ErrorResponse>(errorResponse, HttpStatus.TOO_MANY_REQUESTS);
+    }
     
     @ExceptionHandler(Exception.class)
     public ResponseEntity<String> handleGenericException(Exception ex) {

@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.auth.annotation.RateLimit;
 import com.auth.constant.ApiConstant;
 import com.auth.dto.ChangePasswordDto;
 import com.auth.dto.DeleteUserDto;
@@ -39,6 +40,7 @@ public class UserController {
 	
     private Logger logger = LoggerFactory.getLogger(UserController.class);
 
+    @RateLimit(capacity = 5, refillTokens = 5, duration = 1)
 	@GetMapping(ApiConstant.GET_USER_DETAILS)
 	public ResponseEntity<ApiResponse<UserDto>> getUserDetails(@PathVariable String usernameOrEmail) throws UserNotFoundException {
 		
@@ -49,6 +51,7 @@ public class UserController {
 				.body(new ApiResponse<>(userDetails, "Success", "User Details fetched successfully", HttpStatus.OK.value(), LocalDateTime.now()));
 	}
 	
+    @RateLimit(capacity = 1, refillTokens = 1, duration = 5)
 	@PutMapping(ApiConstant.CHANGE_PASSWORD)
 	public ResponseEntity<ApiResponse<Boolean>> changePassword(@RequestBody ChangePasswordDto passwordDto) throws UserNotFoundException, OtpGenerationFailedException, InvalidOtpException, InvalidPasswordException {
 		Boolean isPasswordChanged = userService.changePassword(passwordDto);

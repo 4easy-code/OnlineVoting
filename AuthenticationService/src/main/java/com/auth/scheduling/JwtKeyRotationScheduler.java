@@ -1,7 +1,9 @@
-package com.auth.services;
+package com.auth.scheduling;
 
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+
+import com.auth.services.JwtSecretService;
 
 import lombok.RequiredArgsConstructor;
 

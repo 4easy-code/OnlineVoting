@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.auth.annotation.RateLimit;
 import com.auth.constant.ApiConstant;
 import com.auth.dto.LoginDto;
 import com.auth.dto.OtpDto;
@@ -41,6 +42,7 @@ public class AuthController {
 	
 	private Logger logger = LoggerFactory.getLogger(AuthController.class);
 	
+	@RateLimit(capacity = 1, refillTokens = 1, duration = 1)
 	@PostMapping(ApiConstant.CREATE_USER)
 	public ResponseEntity<ApiResponse<UserDto>> createUser(@RequestBody @Valid UserDto userDto) throws UserAlreadyExistsException {
 		UserDto user = loginService.registerUser(userDto);
@@ -49,9 +51,10 @@ public class AuthController {
 				.body(new ApiResponse<>(user, "Success", "User added successfully", HttpStatus.CREATED.value(), LocalDateTime.now()));
 	}
 	
+	@RateLimit(capacity = 5, refillTokens = 5, duration = 1)
 	@PostMapping(ApiConstant.LOGIN)
 	public ResponseEntity<ApiResponse<JwtResponse>> loginUser(@RequestBody @Valid LoginDto loginDto) throws UserNotFoundException, InvalidPasswordException, InvalidCredentialsException, UserNotValidatedException {
-		
+		logger.info("trying to login user: {}", loginDto.getUsernameOrEmail());
 		
 		JwtResponse jwtResponse = loginService.loginUser(loginDto);
 		
@@ -59,12 +62,19 @@ public class AuthController {
 				.body(new ApiResponse<>(jwtResponse, "Success", "User Logged in successfully", HttpStatus.OK.value(), LocalDateTime.now()));
 	}
 	
+	@RateLimit(capacity = 1, refillTokens = 1, duration = 5)
 	@PostMapping(ApiConstant.CREATE_OTP)
-	public ResponseEntity<ApiResponse<OtpResponse>> generateOtp(@PathVariable String userToken) throws UserNotFoundException, OtpGenerationFailedException {
+	public ResponseEntity<ApiResponse<OtpResponse>> generateOtp(@PathVariable String userToken) 
+	        throws UserNotFoundException, OtpGenerationFailedException {
+		logger.info("trying to generate OTP for user: {}", userToken);
 		OtpResponse otp = loginService.generateOtp(userToken);
-		return ResponseEntity.status(HttpStatus.CREATED)
-				.body(new ApiResponse<>(otp, "Success", "otp created successfully", HttpStatus.CREATED.value(), LocalDateTime.now()));
+	    
+	    return ResponseEntity.status(HttpStatus.CREATED)
+	            .body(new ApiResponse<>(otp, "Success", 
+	                    "OTP created successfully", 
+	                    HttpStatus.CREATED.value(), LocalDateTime.now()));
 	}
+
 	
 	@PostMapping(ApiConstant.VALIDATE_USER)
 	public ResponseEntity<ApiResponse<Boolean>> validateOtp(@RequestBody @Valid OtpDto otpDto) {

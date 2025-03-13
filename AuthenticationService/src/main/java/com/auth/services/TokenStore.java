@@ -1,5 +1,9 @@
 package com.auth.services;
 
+import java.util.Deque;
+import java.util.LinkedList;
+import java.util.concurrent.ConcurrentHashMap;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -12,23 +16,28 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class TokenStore {
 	private final StringRedisTemplate redisTemplate;
+	public final ConcurrentHashMap<String, Deque<String>> activeSessions = new ConcurrentHashMap<>();
+	
     private static final String TOKEN_PREFIX_ACCESS = "access_token:";
-    private static final String TOKEN_PREFIX_REFRESH = "refresh_token";
+    private static final String TOKEN_PREFIX_REFRESH = "refresh_token:";
+    private static final int MAX_SESSIONS = 3;
     
     private Logger logger = LoggerFactory.getLogger(TokenService.class);
  
-    public void storeToken(String username, String token) {
-    	logger.info("trying to set token in redis cache");
-    	logger.info("Storing token for {}: {}", username, token);
-        String key = TOKEN_PREFIX_ACCESS + username;
+    public synchronized void storeToken(String username, String token) {
+        String key = TOKEN_PREFIX_ACCESS + username; // e.g., "access_token:mayank"
+        activeSessions.putIfAbsent(key, new LinkedList<>());
+        Deque<String> sessions = activeSessions.get(key);
 
-        redisTemplate.delete(key);
+        if (sessions.size() >= MAX_SESSIONS) {
+            String removedToken = sessions.removeFirst();
+            logger.info("Removed oldest session: {} ", removedToken);
+        }
 
-        // Store new token with expiration
-        redisTemplate.opsForValue().set(key, token);
-        
-        logger.info("key store: {}", redisTemplate.opsForValue().get(key));
+        sessions.addLast(token);
+        logger.info("Stored token under key: {}", key);
     }
+
     
     public void storeRefreshToken(String username, String token) {
     	String key = TOKEN_PREFIX_REFRESH + username;
@@ -36,25 +45,11 @@ public class TokenStore {
         redisTemplate.opsForValue().set(key, token);
     }
     
-    public boolean isValidToken(String username, String token) {
-        String key = TOKEN_PREFIX_ACCESS + username;
-        String storedToken = redisTemplate.opsForValue().get(key);
-
-        logger.info("Checking token for {}: Stored={}, Incoming={}", username, storedToken, token);
-
-        if (storedToken == null) {
-            logger.error("Stored token is NULL. Maybe it expired?");
-            return false;
-        }
-
-        boolean isValid = token.equals(storedToken);
-        
-        if (!isValid) {
-            logger.error("Token MISMATCH! Possible causes: expired session, different devices, or invalidation.");
-        }
-        
-        return isValid;
+    public boolean isTokenValid(String username, String token) {
+        String key = TOKEN_PREFIX_ACCESS + username; // Must match the one in storeToken()
+        return activeSessions.containsKey(key) && activeSessions.get(key).contains(token);
     }
+
     
     public boolean isRefreshTokenValid(String username, String token) {
     	String key = TOKEN_PREFIX_REFRESH + username;
@@ -75,8 +70,11 @@ public class TokenStore {
     }
 
     
-    // Invalidate a user's session (on logout).
-    public void invalidateToken(String username) {
-        redisTemplate.delete(TOKEN_PREFIX_ACCESS + username);
+    public void removeToken(String username, String token) {
+        activeSessions.getOrDefault(TOKEN_PREFIX_ACCESS + username, new LinkedList<>()).remove(token);
+    }
+    
+    public void removeAllTokens(String username) {
+        activeSessions.remove(TOKEN_PREFIX_ACCESS + username);
     }
 }
