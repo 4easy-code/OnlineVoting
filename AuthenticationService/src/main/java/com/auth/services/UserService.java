@@ -112,6 +112,7 @@ public class UserService {
 		user.setCountry(updateUserDto.getCountry());
 		user.setGender(updateUserDto.getGender());
 		user.setPhoneNumber(updateUserDto.getPhoneNumber());
+		user.setAge(updateUserDto.getAge());
 		userRepository.save(user);
 		
 		return modelMapper.map(user, UpdateUserResponse.class);

@@ -18,14 +18,14 @@ public class TokenStore {
 	private final StringRedisTemplate redisTemplate;
 	public final ConcurrentHashMap<String, Deque<String>> activeSessions = new ConcurrentHashMap<>();
 	
-    private static final String TOKEN_PREFIX_ACCESS = "access_token:";
+    public static final String TOKEN_PREFIX_ACCESS = "access_token:";
     private static final String TOKEN_PREFIX_REFRESH = "refresh_token:";
     private static final int MAX_SESSIONS = 3;
     
     private Logger logger = LoggerFactory.getLogger(TokenService.class);
  
     public synchronized void storeToken(String username, String token) {
-        String key = TOKEN_PREFIX_ACCESS + username; // e.g., "access_token:mayank"
+        String key = TOKEN_PREFIX_ACCESS + username;
         activeSessions.putIfAbsent(key, new LinkedList<>());
         Deque<String> sessions = activeSessions.get(key);
 

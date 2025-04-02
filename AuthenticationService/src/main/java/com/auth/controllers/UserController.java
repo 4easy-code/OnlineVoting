@@ -40,7 +40,7 @@ public class UserController {
 	
     private Logger logger = LoggerFactory.getLogger(UserController.class);
 
-    @RateLimit(capacity = 5, refillTokens = 5, duration = 1)
+    @RateLimit(capacity = 20, refillTokens = 20, duration = 1)
 	@GetMapping(ApiConstant.GET_USER_DETAILS)
 	public ResponseEntity<ApiResponse<UserDto>> getUserDetails(@PathVariable String usernameOrEmail) throws UserNotFoundException {
 		

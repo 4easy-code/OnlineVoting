@@ -11,7 +11,6 @@ import com.auth.response.JwtResponse;
 import com.auth.util.JwtUtil;
 
 import io.jsonwebtoken.ExpiredJwtException;
-import io.jsonwebtoken.JwtException;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -46,7 +45,7 @@ public class RefreshTokenService {
 	        tokenStore.storeToken(username, newAccessToken);
 
 	        logger.info("New access token created for user: {}", username);
-	        return new JwtResponse(newAccessToken, refreshToken, username, role);
+	        return new JwtResponse(newAccessToken, refreshToken, username, role, null);
 
 	    } catch (ExpiredJwtException e) {
 	        logger.info("Refresh token expired: {}", e.getMessage());

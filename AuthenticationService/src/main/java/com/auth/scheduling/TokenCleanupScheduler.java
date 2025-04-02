@@ -18,10 +18,11 @@ public class TokenCleanupScheduler {
     
     private Logger logger = LoggerFactory.getLogger(TokenCleanupScheduler.class);
 
-    @Scheduled(fixedRate = 120000) // run every 2 minute to clean expired tokens
+    @Scheduled(fixedRate = 60000) // run every 1 minute to clean expired tokens
     public void cleanExpiredTokens() {
         logger.info("Running expired token cleanup...");
-        tokenStore.activeSessions.forEach((username, tokens) -> {
+        tokenStore.activeSessions.forEach((key, tokens) -> {
+        	String username = key.replace(TokenStore.TOKEN_PREFIX_ACCESS, "");
             tokens.removeIf(token -> !jwtUtil.validateToken(token, username));
         });
     }

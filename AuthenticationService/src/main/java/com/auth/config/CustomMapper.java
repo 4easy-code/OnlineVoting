@@ -1,11 +1,11 @@
-package com.auth.mapper;
+package com.auth.config;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-public class UserMapper {
+public class CustomMapper {
 	@Bean
 	ModelMapper mapper() {
 		ModelMapper mapper = new ModelMapper();

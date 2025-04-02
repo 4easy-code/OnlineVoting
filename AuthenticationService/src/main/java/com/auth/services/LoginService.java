@@ -93,13 +93,15 @@ public class LoginService {
 		if(authentication.isAuthenticated()) {
 			String role = user.getRole();
 			String username = user.getUsername();
+			String email = user.getEmail();
+			
 			String accessToken = jwtUtil.generateToken(username, role, jwtAccessTokenExpirationTime);
 			String refreshToken = jwtUtil.generateRefreshToken(username, role, jwtRefreshTokenExpirationTime);
 			
 			tokenStore.storeToken(username, accessToken);
 			tokenStore.storeRefreshToken(username, refreshToken);
 			
-			return new JwtResponse(accessToken, refreshToken, username, role);
+			return new JwtResponse(accessToken, refreshToken, username, role, email);
 		} else {
 			throw new InvalidCredentialsException("Invalid username or password!");
 		}

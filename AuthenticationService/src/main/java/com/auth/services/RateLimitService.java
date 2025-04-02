@@ -12,7 +12,6 @@ import com.auth.util.JwtUtil;
 
 import io.github.bucket4j.Bandwidth;
 import io.github.bucket4j.Bucket;
-import io.github.bucket4j.Bucket4j;
 import io.github.bucket4j.Refill;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -33,7 +32,7 @@ public class RateLimitService {
         if (authHeader != null) {
             String JWTToken = authHeader.substring(7).trim();
             String userId = jwtUtil.extractUsername(JWTToken);
-            key = (userId != null) ? "USER_" + userId : "IP_" + request.getRemoteAddr();
+            key = "USER_" + userId;
         } else {
         	logger.info("Fallback: Use IP address if user is not authenticated");
             key = "IP_" + request.getRemoteAddr();
@@ -48,7 +47,7 @@ public class RateLimitService {
         Bucket bucket = userBuckets.computeIfAbsent(key, k -> {
             logger.info("Creating bucket for key: {}", key);
             Bandwidth limit = Bandwidth.classic(capacity, Refill.intervally(refillTokens, Duration.ofMinutes(refillDuration)));
-            return Bucket4j.builder().addLimit(limit).build();
+            return Bucket.builder().addLimit(limit).build();
         });
         
         // this wasted my whole evening :)

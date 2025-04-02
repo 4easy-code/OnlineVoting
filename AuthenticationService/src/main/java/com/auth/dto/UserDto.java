@@ -12,4 +12,11 @@ public class UserDto {
 	private String password;
 	private String email;
 	private String role;
+	
+	private String gender;
+	private String phoneNumber;
+	private String country;
+	private Integer age;
+
+	private boolean isVerified;
 }

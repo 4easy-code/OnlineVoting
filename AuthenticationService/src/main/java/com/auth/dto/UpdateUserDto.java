@@ -12,4 +12,5 @@ public class UpdateUserDto {
 	private String gender;
 	private String phoneNumber;
 	private String country;
+	private int age;
 }

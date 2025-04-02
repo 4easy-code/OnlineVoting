@@ -26,7 +26,7 @@ public class User {
 	private String gender;
 	private String phoneNumber;
 	private String country;
-	
-	private boolean hasVoted = false;
+	private Integer age;
+
 	private boolean isVerified = false;
 }

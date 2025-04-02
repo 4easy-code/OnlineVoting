@@ -60,7 +60,13 @@ public class SecurityConfig {
 						"/auth/createUser",
 						"/auth/validateUser",
 						"/auth/createOtp/*",
-						"/refresh/*"
+						"/refresh/*",
+						"/jwtSecret/*",
+						"/tokenStore/*",
+						"/swagger-ui.html", 
+						"/v3/api-docs", 
+						"/v3/api-docs/**", 
+						"/swagger-ui/**"
 						)
 				.permitAll()
 				.requestMatchers("/users/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_USER")
